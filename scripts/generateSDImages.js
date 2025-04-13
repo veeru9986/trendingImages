@@ -6,7 +6,7 @@ import crypto from 'node:crypto';
 import { ExifTool } from 'exiftool-vendored';
 
 const exiftool = new ExifTool();
-const COPYRIGHT_LOG = '../data/copyright_logs.csv';
+const COPYRIGHT_LOG = 'data/copyright_logs.csv';
 
 // Initialize copyright log file
 async function initLog() {
@@ -57,9 +57,10 @@ async function generateImage(prompt, outputPath, keyword) {
   const payload = {
     prompt: `${prompt} | watermark:©${new Date().getFullYear()} YourBrand`,
     negative_prompt: "blurry, low quality, text, watermark",
-    steps: 25,
-    width: 512,
-    height: 512,
+    steps: 20,
+    width: 384,
+    height: 384,
+    batch_size : 1,
     sampler_name: "DPM++ 2M Karras",
     cfg_scale: 7,
     seed: -1,
@@ -113,7 +114,7 @@ function getStyle(iter) {
 (async () => {
   await initLog();
   
-  createReadStream('../inputs/trends.csv')
+  createReadStream('inputs/trends.csv')
     .pipe(csv())
     .on('data', async (row) => {
       const keyword = row['Trends'];
