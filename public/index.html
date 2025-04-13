@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>AI Art Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="dashboard">
+    <h1>Trending Art Performance</h1>
+    
+    <div class="grid">
+      <!-- Sales Overview -->
+      <div class="card">
+        <h2>Today's Sales</h2>
+        <div id="salesToday">$0</div>
+      </div>
+      
+      <!-- Top Performers -->
+      <div class="card">
+        <h2>Top Keywords</h2>
+        <ul id="topKeywords"></ul>
+      </div>
+      
+      <!-- Price Recommendations -->
+      <div class="card">
+        <h2>Suggested Prices</h2>
+        <table id="priceTable">
+          <tr><th>Keyword</th><th>Price</th></tr>
+        </table>
+      </div>
+    </div>
+    
+    <!-- Sales Chart -->
+    <div class="chart-container">
+      <canvas id="salesChart"></canvas>
+    </div>
+  </div>
+
+  <script>
+    // Fetch data from API
+    async function loadData() {
+      const [sales, trends] = await Promise.all([
+        fetch('/api/report').then(r => r.json()),
+        fetch('/api/trends').then(r => r.json())
+      ]);
+      
+      // Update UI
+      document.getElementById('salesToday').textContent = 
+        `$${Object.values(sales).reduce((sum, item) => sum + item.total, 0)}`;
+      
+      // Top keywords list
+      const topKeywords = Object.entries(sales)
+        .sort((a, b) => b[1].count - a[1].count)
+        .slice(0, 5);
+      
+      const keywordsList = document.getElementById('topKeywords');
+      keywordsList.innerHTML = topKeywords.map(
+        ([kw, data]) => `<li>${kw}: ${data.count} sales ($${data.total})</li>`
+      ).join('');
+      
+      // Price table
+      const priceTable = document.getElementById('priceTable');
+      trends.forEach(trend => {
+        const row = priceTable.insertRow();
+        row.insertCell(0).textContent = trend.keyword;
+        row.insertCell(1).textContent = `$${trend.recommendedPrice}`;
+      });
+      
+      // Chart
+      new Chart(
+        document.getElementById('salesChart'),
+        {
+          type: 'bar',
+          data: {
+            labels: Object.keys(sales),
+            datasets: [{
+              label: 'Sales (Last 7 Days)',
+              data: Object.values(sales).map(v => v.count),
+              backgroundColor: '#4dc9f6'
+            }]
+          }
+        }
+      );
+    }
+    
+    loadData();
+    setInterval(loadData, 300000); // Refresh every 5 minutes
+  </script>
+</body>
+</html>
